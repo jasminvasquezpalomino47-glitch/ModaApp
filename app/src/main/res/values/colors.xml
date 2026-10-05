@@ -2,4 +2,9 @@
 <resources>
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
+    <!-- Paleta ModaApp (Rosa / Magenta Urbano) -->
+    <color name="primary">#A01255</color>
+    <color name="primary_dark">#780B3F</color>
+    <color name="accent">#D81B60</color>
+    <color name="bg_light">#F5F5F5</color>
 </resources>
