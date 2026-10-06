@@ -192,4 +192,52 @@ class DbHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME, null
         db.close()
         return lista
     }
+
+    // --- MÉTODOS PARA REPORTES ---
+
+    // Obtener la suma total de dinero vendido en los pedidos
+    fun obtenerTotalVendido(): Double {
+        var total = 0.0
+        val db = this.readableDatabase
+        val cursor = db.rawQuery("SELECT SUM($COLUMN_PEDIDO_TOTAL) FROM $TABLE_PEDIDOS", null)
+        if (cursor.moveToFirst()) {
+            total = cursor.getDouble(0)
+        }
+        cursor.close()
+        db.close()
+        return total
+    }
+
+    // Obtener cantidad total de pedidos atendidos
+    fun obtenerCantidadPedidos(): Int {
+        var cantidad = 0
+        val db = this.readableDatabase
+        val cursor = db.rawQuery("SELECT COUNT(*) FROM $TABLE_PEDIDOS", null)
+        if (cursor.moveToFirst()) {
+            cantidad = cursor.getInt(0)
+        }
+        cursor.close()
+        db.close()
+        return cantidad
+    }
+
+    // Obtener lista de ropa con su stock para las barras del reporte
+    fun obtenerStockPrendas(): List<Map<String, Any>> {
+        val lista = mutableListOf<Map<String, Any>>()
+        val db = this.readableDatabase
+        val cursor = db.rawQuery("SELECT $COLUMN_NOMBRE, $COLUMN_STOCK FROM $TABLE_ROPA ORDER BY $COLUMN_STOCK DESC", null)
+
+        if (cursor.moveToFirst()) {
+            do {
+                val mapa = mapOf(
+                    "nombre" to cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_NOMBRE)),
+                    "stock" to cursor.getInt(cursor.getColumnIndexOrThrow(COLUMN_STOCK))
+                )
+                lista.add(mapa)
+            } while (cursor.moveToNext())
+        }
+        cursor.close()
+        db.close()
+        return lista
+    }
 }
