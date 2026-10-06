@@ -9,7 +9,7 @@ class DbHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME, null
 
     companion object {
         private const val DATABASE_NAME = "ModaApp.db"
-        private const val DATABASE_VERSION = 2
+        private const val DATABASE_VERSION = 3
 
         // Tabla Ropa
         const val TABLE_ROPA = "ropa"
@@ -26,6 +26,15 @@ class DbHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME, null
         const val COLUMN_CLIENTE_DNI = "dni"
         const val COLUMN_CLIENTE_NOMBRE = "nombre"
         const val COLUMN_CLIENTE_TELEFONO = "telefono"
+
+        // Tabla Pedidos / Ventas
+        const val TABLE_PEDIDOS = "pedidos"
+        const val COLUMN_PEDIDO_ID = "id"
+        const val COLUMN_PEDIDO_CLIENTE = "cliente_nombre"
+        const val COLUMN_PEDIDO_PRENDA = "prenda_nombre"
+        const val COLUMN_PEDIDO_CANTIDAD = "cantidad"
+        const val COLUMN_PEDIDO_TOTAL = "total"
+        const val COLUMN_PEDIDO_FECHA = "fecha"
     }
 
     override fun onCreate(db: SQLiteDatabase) {
@@ -46,11 +55,22 @@ class DbHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME, null
                 + COLUMN_CLIENTE_NOMBRE + " TEXT NOT NULL, "
                 + COLUMN_CLIENTE_TELEFONO + " TEXT)")
         db.execSQL(createTableClientes)
+
+        // Creación tabla Pedidos
+        val createTablePedidos = ("CREATE TABLE " + TABLE_PEDIDOS + " ("
+                + COLUMN_PEDIDO_ID + " INTEGER PRIMARY KEY AUTOINCREMENT, "
+                + COLUMN_PEDIDO_CLIENTE + " TEXT NOT NULL, "
+                + COLUMN_PEDIDO_PRENDA + " TEXT NOT NULL, "
+                + COLUMN_PEDIDO_CANTIDAD + " INTEGER NOT NULL, "
+                + COLUMN_PEDIDO_TOTAL + " REAL NOT NULL, "
+                + COLUMN_PEDIDO_FECHA + " TEXT NOT NULL)")
+        db.execSQL(createTablePedidos)
     }
 
     override fun onUpgrade(db: SQLiteDatabase, oldVersion: Int, newVersion: Int) {
         db.execSQL("DROP TABLE IF EXISTS $TABLE_ROPA")
         db.execSQL("DROP TABLE IF EXISTS $TABLE_CLIENTES")
+        db.execSQL("DROP TABLE IF EXISTS $TABLE_PEDIDOS")
         onCreate(db)
     }
 
@@ -123,6 +143,47 @@ class DbHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME, null
                     "dni" to cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_CLIENTE_DNI)),
                     "nombre" to cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_CLIENTE_NOMBRE)),
                     "telefono" to (cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_CLIENTE_TELEFONO)) ?: "")
+                )
+                lista.add(mapa)
+            } while (cursor.moveToNext())
+        }
+        cursor.close()
+        db.close()
+        return lista
+    }
+
+    // --- MÉTODOS PARA PEDIDOS / VENTAS ---
+
+    // Registrar nuevo pedido
+    fun insertarPedido(clienteNombre: String, prendaNombre: String, cantidad: Int, total: Double, fecha: String): Long {
+        val db = this.writableDatabase
+        val values = ContentValues().apply {
+            put(COLUMN_PEDIDO_CLIENTE, clienteNombre)
+            put(COLUMN_PEDIDO_PRENDA, prendaNombre)
+            put(COLUMN_PEDIDO_CANTIDAD, cantidad)
+            put(COLUMN_PEDIDO_TOTAL, total)
+            put(COLUMN_PEDIDO_FECHA, fecha)
+        }
+        val result = db.insert(TABLE_PEDIDOS, null, values)
+        db.close()
+        return result
+    }
+
+    // Obtener lista de todos los pedidos registrados
+    fun obtenerTodosLosPedidos(): List<Map<String, Any>> {
+        val lista = mutableListOf<Map<String, Any>>()
+        val db = this.readableDatabase
+        val cursor = db.rawQuery("SELECT * FROM $TABLE_PEDIDOS ORDER BY $COLUMN_PEDIDO_ID DESC", null)
+
+        if (cursor.moveToFirst()) {
+            do {
+                val mapa = mapOf(
+                    "id" to cursor.getInt(cursor.getColumnIndexOrThrow(COLUMN_PEDIDO_ID)),
+                    "cliente" to cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_PEDIDO_CLIENTE)),
+                    "prenda" to cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_PEDIDO_PRENDA)),
+                    "cantidad" to cursor.getInt(cursor.getColumnIndexOrThrow(COLUMN_PEDIDO_CANTIDAD)),
+                    "total" to cursor.getDouble(cursor.getColumnIndexOrThrow(COLUMN_PEDIDO_TOTAL)),
+                    "fecha" to cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_PEDIDO_FECHA))
                 )
                 lista.add(mapa)
             } while (cursor.moveToNext())
